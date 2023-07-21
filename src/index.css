@@ -11,6 +11,29 @@ body {
   padding-top: 10px;
 }
 
+.week-container {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+}
+
+.week-item {
+  padding: 10px;
+  margin-right: 10px;
+}
+
+.week-summary {
+  font-weight: bold;
+}
+
+.run {
+  padding: 10px;
+  margin-top: 10px;
+  background-color: aquamarine;
+}
+
+
+
 code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
