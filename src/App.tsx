@@ -49,19 +49,34 @@ function sumWeek(week: RunWeek, get: (r: Run) => number) {
   return Object.values(week).reduce((acc, runs) => acc + sum(runs, get), 0);
 };
 
-function AddRun() {
+interface Props {
+  run?: Run;
+  submit: (r: Run) => void;
+}
+
+function AddRun(props: Props) {
   const [ showModal, setShowModal ] = createSignal(false);
   const [ runTitle, setRunTitle ] = createSignal('');
   const [ plannedMiles, setPlannedMiles ] = createSignal('');
   const [ actualMiles, setActualMiles ] = createSignal('');
   const [ runDate, setRunDate ] = createSignal('');
+  const [ runNotes, setRunNotes ] = createSignal('');
 
   const clear = () => {
     setRunTitle('');
     setPlannedMiles('');
     setActualMiles('');
     setRunDate('');
+    setRunNotes('');
   };
+
+  if (props.run) {
+    setRunTitle(props.run.name);
+    setPlannedMiles(props.run.planned_miles.toString());
+    setActualMiles(props.run.actual_miles.toString());
+    setRunDate(props.run.date);
+    setRunNotes(props.run.notes || '');
+  }
 
   const submitRun = (e: Event) => {
     e.preventDefault();
@@ -70,9 +85,10 @@ function AddRun() {
         name: runTitle(),
         date: !!runDate() ? runDate() : new Date().toISOString(),
         planned_miles: parseFloat(plannedMiles()),
-        actual_miles: parseFloat(actualMiles())
+        actual_miles: parseFloat(actualMiles()),
+        notes: runNotes(),
       };
-      addRun(r);
+      props.submit(r);
       clear();
     });
   };
@@ -90,6 +106,7 @@ function AddRun() {
           <input type="date" placeholder="run date" value={runDate()} onInput={(e) => setRunDate((e.currentTarget.value))} />
           <input type="number" placeholder="planned miles" required value={plannedMiles()} onInput={(e) => setPlannedMiles((e.currentTarget.value))} />
           <input type="number" placeholder="actual miles" value={actualMiles()} onInput={(e) => setActualMiles((e.currentTarget.value))} />
+          <input type="text" placeholder="notes" value={runNotes()} onInput={(e) => setRunNotes((e.currentTarget.value))} />
           <button type="button" onClick={submitRun}>submit</button>
           <button type="button" onClick={cancel}>cancel</button>
         </form>
@@ -99,31 +116,33 @@ function AddRun() {
   );
 }
 
-function RenderRunWeek(data: RunWeek) {
+function RunView(props: { run: Run; }) {
+  return (
+    <div class="run">
+      <div>{props.run.name || 'run'}</div>
+      <div>{props.run.date}</div>
+      <div>{props.run.planned_miles} mi / {props.run.actual_miles || '--'} mi</div>
+      <div>{props.run.notes}</div>
+    </div>
+  );
+};
+
+function WeekView(data: RunWeek) {
   const days = Object.keys(data);
   return (
     <div>
       <div class="week-container">
         <For each={days}>
-          {(day) => <div class="week-item">{day}</div>}
-        </For>
-      </div>
-      <div class="week-container">
-        <For each={days}>
           {(day) => {
             const runs: Run[] = data[ day as Day ];
             return (
-              <div class="week-item">
-                <For each={runs}>
-                  {(run) => (
-                    <div class="run">
-                      <div>{run.name || 'run'}</div>
-                      <div>{run.date}</div>
-                      <div>{run.planned_miles} mi / {run.actual_miles || '--'} mi</div>
-                      <div>{run.notes}</div>
-                    </div>
-                  )}
-                </For>
+              <div>
+                <div class="week-item">{day}</div>
+                <div class="week-item">
+                  <For each={runs}>
+                    {(r) => <RunView run={r} />}
+                  </For>
+                </div>
               </div>
             );
           }}
@@ -143,20 +162,21 @@ function App() {
   return (
     <div>
       <h1>runlog</h1>
-      <AddRun />
+      <AddRun submit={(r: Run) => addRun(r).then(refetch)} />
       <Show
         when={!runs.loading}
         fallback={<div>loading...</div>}
       >
         <div class="run-container">
           <For each={Object.entries(byWeek())}>
-            {([week, weekRuns]) => {
+            {([ week, weekRuns ]) => {
               return (
-              <div class="run-item">
-                <div>Week of {formatDateStr(week)}</div>
-                {RenderRunWeek(createRunWeek(weekRuns))}
-              </div>
-            )}}
+                <div class="run-item">
+                  <h3>Week of {formatDateStr(week)}</h3>
+                  {WeekView(createRunWeek(weekRuns))}
+                </div>
+              );
+            }}
           </For>
         </div>
       </Show>
