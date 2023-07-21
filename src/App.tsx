@@ -1,24 +1,12 @@
 import { createResource, createSignal, For, Show, batch } from "solid-js";
 
-import { getWeekStart, formatDateStr } from "./util";
+import { formatDateStr, createRunWeek, groupByWeek } from "./util";
 import { Run, RunWeek, Day } from './index';
 import { createClient } from "@supabase/supabase-js";
 
 const ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 const PROJECT_URL = import.meta.env.VITE_SUPABASE_PROJECT_URL;
 const supabase = createClient(PROJECT_URL, ANON_KEY);
-
-const mock: RunWeek = {
-  Monday: [ { id: 1, name: 'run', date: '2021-01-01', planned_miles: 3, actual_miles: 3, notes: '' },
-  { id: 2, name: 'run', date: '2021-01-01', planned_miles: 3, actual_miles: 3, notes: '' },
-  ],
-  Tuesday: [ { id: 2, name: 'run', date: '2021-01-01', planned_miles: 3, actual_miles: 3, notes: '' } ],
-  Wednesday: [ { id: 3, name: 'run', date: '2021-01-01', planned_miles: 3, actual_miles: 3, notes: '' } ],
-  Thursday: [ { id: 4, name: 'run', date: '2021-01-01', planned_miles: 3, actual_miles: 3, notes: '' } ],
-  Friday: [ { id: 5, name: 'run', date: '2021-01-01', planned_miles: 3, actual_miles: 3, notes: '' } ],
-  Saturday: [],
-  Sunday: [ { id: 7, name: 'run', date: '2021-01-01', planned_miles: 3, actual_miles: 3, notes: '' } ],
-};
 
 export async function getRuns() {
   const { data, error } = await supabase
@@ -59,18 +47,6 @@ function sum(runs: Run[], get: (r: Run) => number) {
 
 function sumWeek(week: RunWeek, get: (r: Run) => number) {
   return Object.values(week).reduce((acc, runs) => acc + sum(runs, get), 0);
-};
-
-function groupByWeek(runs: Run[]) {
-  const groups: Record<string, Run[]> = {};
-  runs.forEach(r => {
-    const start = getWeekStart(new Date(r.date)).toDateString();
-    if (!groups[ start ]) {
-      groups[ start ] = [];
-    }
-    groups[ start ].push(r);
-  });
-  return groups;
 };
 
 function AddRun() {
@@ -114,7 +90,7 @@ function AddRun() {
           <input type="date" placeholder="run date" value={runDate()} onInput={(e) => setRunDate((e.currentTarget.value))} />
           <input type="number" placeholder="planned miles" required value={plannedMiles()} onInput={(e) => setPlannedMiles((e.currentTarget.value))} />
           <input type="number" placeholder="actual miles" value={actualMiles()} onInput={(e) => setActualMiles((e.currentTarget.value))} />
-          <button type="button" onClick={submitRun}>add run</button>
+          <button type="button" onClick={submitRun}>submit</button>
           <button type="button" onClick={cancel}>cancel</button>
         </form>
       </Show>
@@ -142,6 +118,7 @@ function RenderRunWeek(data: RunWeek) {
                   {(run) => (
                     <div class="run">
                       <div>{run.name || 'run'}</div>
+                      <div>{run.date}</div>
                       <div>{run.planned_miles} mi / {run.actual_miles || '--'} mi</div>
                       <div>{run.notes}</div>
                     </div>
@@ -161,6 +138,7 @@ function RenderRunWeek(data: RunWeek) {
 
 function App() {
   const [ runs, { refetch } ] = createResource<Run[]>(getRuns);
+  const byWeek = () => groupByWeek(runs());
 
   return (
     <div>
@@ -170,8 +148,17 @@ function App() {
         when={!runs.loading}
         fallback={<div>loading...</div>}
       >
-        <div class="run-container">Runs for week of {getWeekStart(new Date()).toDateString()}</div>
-        {RenderRunWeek(mock)}
+        <div class="run-container">
+          <For each={Object.entries(byWeek())}>
+            {([week, weekRuns]) => {
+              return (
+              <div class="run-item">
+                <div>Week of {formatDateStr(week)}</div>
+                {RenderRunWeek(createRunWeek(weekRuns))}
+              </div>
+            )}}
+          </For>
+        </div>
       </Show>
     </div>
   );

@@ -1,5 +1,6 @@
+import { runWithOwner } from "solid-js";
 import { Run } from "./index";
-import { getWeekStart, groupByWeek, createRunWeeks } from "./util";
+import { getWeekStart, groupByWeek, createRunWeek } from "./util";
 
 const testRuns: Run[] = [
   { id: 1, name: 'Test Run 1', date: '2021-01-01', planned_miles: 5, actual_miles: 5 }, // dec28 2020
@@ -23,22 +24,68 @@ describe('getWeekStart', () => {
     expect(getWeekStart(d)).toEqual(expected);
     expect(getWeekStart(d).getDay()).toEqual(1);
   });
+  it('should handle monday right', () => {
+    const d = new Date('2023-07-17 ');
+    const expected = new Date('2023-07-17 ');
+    expect(getWeekStart(d)).toEqual(expected);
+    expect(getWeekStart(d).getDay()).toEqual(1);
+  })
+  it("should handle sunday right", () => {
+    const d = new Date('2023-07-16 ');
+    const expected = new Date('2023-07-10 ');
+    expect(getWeekStart(d)).toEqual(expected);
+    expect(getWeekStart(d).getDay()).toEqual(1);
+  })
 });
 
 describe('testgroupbyweek', () => {
-  it('groups runs by week', () => {
+  it('should get mondays right', () => {
+    const testRuns = [{name: 'monday july 17 2023', date: '2023-07-17', planned_miles: 0, actual_miles: 0}];
     const groups = groupByWeek(testRuns);
-    console.log(Object.keys(groups));
-    expect(Object.keys(groups).length).toEqual(3);
-    expect(groups['2020-12-28'].length).toEqual(3);
-    expect(groups['2021-01-04'].length).toEqual(7);
-    expect(groups['2021-01-11'].length).toEqual(2);
+    expect(Object.keys(groups).length).toEqual(1);
+    expect(groups['2023-07-17'].length).toEqual(1);
+    expect(groups['2023-07-17'][0].name).toEqual('monday july 17 2023');
+  });
+  it("should return these as being in the same week", () => {
+    const test = [
+      { name: 'run 1', planned_miles: 5, actual_miles: 5, date: '2023-07-17'},
+      { name: 'run 1', planned_miles: 5, actual_miles: 5, date: '2023-07-18'},
+    ];
+    const groups = groupByWeek(test);
+    expect(Object.keys(groups).length).toEqual(1);
+    expect(groups['2023-07-17'].length).toEqual(2);
+  });
+  it("should return these across two weeks", () => {
+    const test = [
+      { date: '2023-07-15' },
+      { date: '2023-07-16' },
+      { date: '2023-07-17' },
+      { date: '2023-07-18' },
+    ];
+
+    const groups = groupByWeek(test as Run[]);
+    expect(Object.keys(groups).length).toEqual(2);
+    expect(groups['2023-07-10'].length).toEqual(2);
+    expect(groups['2023-07-17'].length).toEqual(2);
   });
 });
 
-describe("createRunWeeks", () => {
-  it("creates a list of weeks from a list of runs", () => {
-    const runweeks = createRunWeeks(testRuns);
-    expect(runweeks.length).toEqual(3);
+describe("createRunWeek", () => {
+  it("creates a runweek from a list of runs", () => {
+    const testWeek: Run[] = [
+      { id: 1, name: 'Test Run 1', date: '2023-07-21', planned_miles: 5, actual_miles: 5 },
+      { id: 2, name: 'Test Run 2', date: '2023-07-22', planned_miles: 5, actual_miles: 5 },
+    ]
+    const runweeks = createRunWeek(testWeek);
+    const expected = {
+      Monday: [],
+      Tuesday: [],
+      Wednesday: [],
+      Thursday: [],
+      Friday: [{ id: 1, name: 'Test Run 1', date: '2023-07-21', planned_miles: 5, actual_miles: 5 }],
+      Saturday: [{ id: 2, name: 'Test Run 2', date: '2023-07-22', planned_miles: 5, actual_miles: 5 }],
+      Sunday: []
+    }
+    expect(runweeks).toEqual(expected);
   });
 });
