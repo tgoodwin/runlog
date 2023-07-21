@@ -54,7 +54,7 @@ interface Props {
   submit: (r: Run) => void;
 }
 
-function AddRun(props: Props) {
+function EditRun(props: Props) {
   const [ showModal, setShowModal ] = createSignal(false);
   const [ runTitle, setRunTitle ] = createSignal('');
   const [ plannedMiles, setPlannedMiles ] = createSignal('');
@@ -162,7 +162,7 @@ function App() {
   return (
     <div>
       <h1>runlog</h1>
-      <AddRun submit={(r: Run) => addRun(r).then(refetch)} />
+      <EditRun submit={(r: Run) => addRun(r).then(refetch)} />
       <Show
         when={!runs.loading}
         fallback={<div>loading...</div>}
