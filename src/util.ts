@@ -13,16 +13,18 @@ export function getWeekStart(d: Date) {
 }
 
 export function formatDateStr(dateStr: string) {
-  // literal madness: https://stackoverflow.com/a/34821566
-  const dateArg = dateStr + " ";
+  return dateStrToDate(dateStr).toDateString().split('T')[0];
+}
 
-  return new Date(dateArg).toDateString().split('T')[0];
+function dateStrToDate(dateStr: string) {
+  var parts = dateStr.split('-');
+  return new Date(+parts[0], +parts[1] - 1, +parts[2]);
 }
 
 export function groupByWeek(runs: Run[]) {
   const groups: Record<string, Run[]> = {};
   runs.forEach(r => {
-    const startd = getWeekStart(new Date(r.date + " "));
+    const startd = getWeekStart(dateStrToDate(r.date));
     const start = startd.toISOString().split('T')[0];
     if (!groups[ start ]) {
       groups[ start ] = [];
@@ -43,7 +45,7 @@ export function createRunWeek(runs: Run[]): RunWeek {
     Sunday: []
   };
   runs.forEach(r => {
-    const day = new Date(r.date + " ").getDay();
+    const day = dateStrToDate(r.date).getDay();
     week[dayEnum[day]].push(r);
   });
   return week;
