@@ -32,8 +32,11 @@ h1 {
 }
 
 .week-item {
-  margin-right: 10px;
   width: 300px;
+}
+
+.margin-right {
+  margin-right: 10px;
 }
 
 .run-week {

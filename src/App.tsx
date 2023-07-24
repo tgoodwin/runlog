@@ -208,8 +208,8 @@ function WeekView(data: RunWeek) {
           {(day) => {
             const runs: Run[] = data[day as Day];
             return (
-              <div class="week-item">
-                <div class="week-item">{day}</div>
+              <div class="week-item margin-right">
+                {day}
                 {runs.length ? (
                   <div>
                     <For each={runs}>{(r) => <RunView run={r} />}</For>
@@ -240,7 +240,7 @@ function App() {
   return (
     <div>
       <div class="week-container">
-        <h1>runlog</h1>
+        <h1 class="margin-right">runlog</h1>
         <RunModal submit={(r) => addRun(r).then(refetch)}>
           {(showModal) => (
             <div class="open-modal large" onClick={showModal}>
