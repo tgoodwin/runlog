@@ -39,6 +39,15 @@ export async function updateRun(r: Run) {
   return error;
 }
 
+export async function deleteRun(runId: number) {
+  console.log(runId);
+  const { error } = await supabase
+    .from("runs")
+    .delete()
+    .eq("id", runId);
+  return error;
+}
+
 function sum(runs: Run[], get: (r: Run) => number) {
   return runs.reduce((acc, r) => acc + get(r), 0);
 }
@@ -46,6 +55,8 @@ function sum(runs: Run[], get: (r: Run) => number) {
 function sumWeek(week: RunWeek, get: (r: Run) => number) {
   return Object.values(week).reduce((acc, runs) => acc + sum(runs, get), 0);
 }
+
+const [ runs, { refetch } ] = createResource<Run[]>(getRuns);
 
 interface Props {
   run?: Run;
@@ -127,6 +138,11 @@ function ModalForm(props: Props) {
             </button>
           </div>
         </form>
+        <Show when={!!props.run?.id}>
+          <button type="button" onClick={() => deleteRun(props.run.id).then(refetch)}>
+            delete
+          </button>
+        </Show>
       </div>
     </div>
   );
@@ -164,7 +180,7 @@ function RunView(props: { run: Run; }) {
         {props.run.planned_miles} mi / {props.run.actual_miles || "--"} mi
       </div>
       <div>{props.run.notes}</div>
-      <RunModal run={props.run} submit={updateRun}>
+      <RunModal run={props.run} submit={(r) => updateRun(r).then(refetch)}>
         {(showModal) => <div onClick={showModal}>[edit]</div>}
       </RunModal>
     </div>
@@ -207,7 +223,6 @@ function WeekView(data: RunWeek) {
 };
 
 function App() {
-  const [ runs, { refetch } ] = createResource<Run[]>(getRuns);
   const byWeek = () => groupByWeek(runs());
 
   return (
