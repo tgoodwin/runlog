@@ -142,10 +142,7 @@ function ModalForm(props: Props) {
         </form>
         <Show when={!!props.run?.id}>
           {/* @ts-ignore */}
-          <button
-            type="button"
-            onClick={() => deleteRun(props.run.id).then(refetch)}
-          >
+          <button type="button" onClick={() => deleteRun(props.run.id).then(refetch)}>
             delete
           </button>
         </Show>
@@ -193,7 +190,11 @@ function RunView(props: { run: Run }) {
       </div>
       <div class="text-small run-field">{props.run.notes}</div>
       <RunModal run={props.run} submit={(r) => updateRun(r).then(refetch)}>
-        {(showModal) => <div class="open-modal" onClick={showModal}>[edit]</div>}
+        {(showModal) => (
+          <div class="open-modal" onClick={showModal}>
+            [edit]
+          </div>
+        )}
       </RunModal>
     </div>
   );
@@ -217,7 +218,11 @@ function WeekView(data: RunWeek) {
                 ) : (
                   <div class="run">
                     <RunModal submit={addRun}>
-                      {(showModal) => <div class="open-modal" onClick={showModal}>+</div>}
+                      {(showModal) => (
+                        <div class="open-modal" onClick={showModal}>
+                          +
+                        </div>
+                      )}
                     </RunModal>
                   </div>
                 )}
