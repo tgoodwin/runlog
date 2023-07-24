@@ -1,4 +1,11 @@
-import { createResource, createSignal, For, Show, batch, type JSX } from "solid-js";
+import {
+  createResource,
+  createSignal,
+  For,
+  Show,
+  batch,
+  type JSX,
+} from "solid-js";
 
 import { formatDateStr, createRunWeek, groupByWeek } from "./util";
 import { Run, RunWeek, Day } from "./index";
@@ -19,9 +26,7 @@ export async function getRuns() {
 }
 
 export async function addRun(r: Run) {
-  const { error } = await supabase
-    .from("runs")
-    .insert(r);
+  const { error } = await supabase.from("runs").insert(r);
   return error;
 }
 
@@ -41,10 +46,7 @@ export async function updateRun(r: Run) {
 
 export async function deleteRun(runId: number) {
   console.log(runId);
-  const { error } = await supabase
-    .from("runs")
-    .delete()
-    .eq("id", runId);
+  const { error } = await supabase.from("runs").delete().eq("id", runId);
   return error;
 }
 
@@ -56,7 +58,7 @@ function sumWeek(week: RunWeek, get: (r: Run) => number) {
   return Object.values(week).reduce((acc, runs) => acc + sum(runs, get), 0);
 }
 
-const [ runs, { refetch } ] = createResource<Run[]>(getRuns);
+const [runs, { refetch }] = createResource<Run[]>(getRuns);
 
 interface Props {
   run?: Run;
@@ -65,11 +67,11 @@ interface Props {
 }
 
 function ModalForm(props: Props) {
-  const [ runTitle, setRunTitle ] = createSignal("");
-  const [ plannedMiles, setPlannedMiles ] = createSignal("");
-  const [ actualMiles, setActualMiles ] = createSignal("");
-  const [ runDate, setRunDate ] = createSignal("");
-  const [ runNotes, setRunNotes ] = createSignal("");
+  const [runTitle, setRunTitle] = createSignal("");
+  const [plannedMiles, setPlannedMiles] = createSignal("");
+  const [actualMiles, setActualMiles] = createSignal("");
+  const [runDate, setRunDate] = createSignal("");
+  const [runNotes, setRunNotes] = createSignal("");
 
   if (props.run) {
     setRunTitle(props.run.name);
@@ -139,7 +141,11 @@ function ModalForm(props: Props) {
           </div>
         </form>
         <Show when={!!props.run?.id}>
-          <button type="button" onClick={() => deleteRun(props.run.id).then(refetch)}>
+          {/* @ts-ignore */}
+          <button
+            type="button"
+            onClick={() => deleteRun(props.run.id).then(refetch)}
+          >
             delete
           </button>
         </Show>
@@ -155,7 +161,7 @@ type ModalProps = {
 };
 
 function RunModal(props: ModalProps) {
-  const [ showModal, setShowModal ] = createSignal(false);
+  const [showModal, setShowModal] = createSignal(false);
   const onSubmit = (r: Run) => {
     props.submit(r);
     setShowModal(false);
@@ -163,25 +169,31 @@ function RunModal(props: ModalProps) {
   return (
     <div>
       <Show when={showModal()}>
-        <ModalForm run={props.run} submit={onSubmit} close={() => setShowModal(false)} />
+        <ModalForm
+          run={props.run}
+          submit={onSubmit}
+          close={() => setShowModal(false)}
+        />
       </Show>
       {props.children(() => setShowModal(true))}
     </div>
   );
 }
 
-
-function RunView(props: { run: Run; }) {
+function RunView(props: { run: Run }) {
   return (
     <div class="run">
-      <div>{props.run.name || "run"}</div>
-      <div>{props.run.date}</div>
-      <div>
-        {props.run.planned_miles} mi / {props.run.actual_miles || "--"} mi
+      <Show when={props.run.name.length}>
+        <div class="text-large">{props.run.name || "run"}</div>
+      </Show>
+      <div class="text-small run-field">{props.run.date}</div>
+      <div class="run-field text-large">
+        <b>{props.run.planned_miles} mi</b> /{" "}
+        <i>{props.run.actual_miles || "--"} mi</i>
       </div>
-      <div>{props.run.notes}</div>
+      <div class="text-small run-field">{props.run.notes}</div>
       <RunModal run={props.run} submit={(r) => updateRun(r).then(refetch)}>
-        {(showModal) => <div onClick={showModal}>[edit]</div>}
+        {(showModal) => <div class="open-modal" onClick={showModal}>[edit]</div>}
       </RunModal>
     </div>
   );
@@ -194,7 +206,7 @@ function WeekView(data: RunWeek) {
       <div class="week-container">
         <For each={days}>
           {(day) => {
-            const runs: Run[] = data[ day as Day ];
+            const runs: Run[] = data[day as Day];
             return (
               <div class="week-item">
                 <div class="week-item">{day}</div>
@@ -205,7 +217,7 @@ function WeekView(data: RunWeek) {
                 ) : (
                   <div class="run">
                     <RunModal submit={addRun}>
-                      {(showModal) => <div onClick={showModal}>+</div>}
+                      {(showModal) => <div class="open-modal" onClick={showModal}>+</div>}
                     </RunModal>
                   </div>
                 )}
@@ -220,7 +232,7 @@ function WeekView(data: RunWeek) {
       </div>
     </div>
   );
-};
+}
 
 function App() {
   const byWeek = () => groupByWeek(runs());
@@ -228,23 +240,28 @@ function App() {
   return (
     <div>
       <div class="week-container">
-      <h1>runlog</h1>
-      <RunModal submit={(r) => addRun(r).then(refetch)}>
-        {(showModal) => <h1 class="open-modal" onClick={showModal}>(+)</h1>}
-      </RunModal>
+        <h1>runlog</h1>
+        <RunModal submit={(r) => addRun(r).then(refetch)}>
+          {(showModal) => (
+            <div class="open-modal large" onClick={showModal}>
+              (+)
+            </div>
+          )}
+        </RunModal>
       </div>
       <Show when={!runs.loading} fallback={<div>loading...</div>}>
         <div class="run-container">
           <For each={Object.entries(byWeek())}>
-            {([ week, weekRuns ]) => {
+            {([week, weekRuns]) => {
               return (
-                <div class="run-item">
+                <div class="run-week">
                   <h3>Week of {formatDateStr(week)}</h3>
                   {WeekView(createRunWeek(weekRuns))}
                 </div>
               );
             }}
           </For>
+          total completed in block: {sum(runs(), (r) => r.actual_miles)} mi
         </div>
       </Show>
     </div>
