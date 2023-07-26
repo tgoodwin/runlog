@@ -39,6 +39,7 @@ export async function updateRun(r: Run) {
       planned_miles: r.planned_miles,
       actual_miles: r.actual_miles,
       notes: r.notes,
+      date: r.date
     })
     .eq("id", r.id);
   return error;
@@ -58,7 +59,8 @@ function sumWeek(week: RunWeek, get: (r: Run) => number) {
   return Object.values(week).reduce((acc, runs) => acc + sum(runs, get), 0);
 }
 
-const [runs, { refetch }] = createResource<Run[]>(getRuns);
+const [ runs, setRuns ] = createSignal<Run[]>([]);
+const refetch = () => getRuns().then((data) => setRuns(data || []));
 
 interface Props {
   run?: Run;
@@ -217,7 +219,7 @@ function WeekView(data: RunWeek) {
                   </div>
                 ) : (
                   <div class="run">
-                    <RunModal submit={addRun}>
+                    <RunModal submit={(r) => addRun(r).then(refetch)}>
                       {(showModal) => (
                         <div class="open-modal" onClick={showModal}>
                           +
@@ -240,6 +242,7 @@ function WeekView(data: RunWeek) {
 }
 
 function App() {
+  refetch();
   const byWeek = () => groupByWeek(runs());
 
   return (
@@ -254,7 +257,7 @@ function App() {
           )}
         </RunModal>
       </div>
-      <Show when={!runs.loading} fallback={<div>loading...</div>}>
+      <Show when={true} fallback={<div>loading...</div>}>
         <div class="run-container">
           <For each={Object.entries(byWeek())}>
             {([week, weekRuns]) => {
