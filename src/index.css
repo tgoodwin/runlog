@@ -72,7 +72,7 @@ h1 {
 }
 
 .add-run {
-  position: absolute;
+  position: fixed;
   padding: 50px;
   left: 50%;
   top: 50%;
