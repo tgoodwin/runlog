@@ -1,6 +1,6 @@
-import dayjs from 'dayjs';
+import dayjs, { Dayjs } from 'dayjs';
 
-import { Run, RunWeek, dayEnum } from "./index";
+import { Run, RunWeek } from "./index";
 
 const WEEK_START = 1; // 0-indexed day of week
 
@@ -36,29 +36,28 @@ export function groupByWeek(runs: Run[]) {
   return groups;
 };
 
-export function getDateRange(start: Date, endInclusive: Date): Date[] {
+export function getDateRange(start: Dayjs, endInclusive: Dayjs): Dayjs[] {
   const dates = [];
-  let currentDate = new Date(start);
-  while (currentDate <= endInclusive) {
-    dates.push(new Date(currentDate));
-    currentDate.setDate(currentDate.getDate() + 1);
+  let curr = start;
+  while (curr <= endInclusive) {
+    dates.push(dayjs(curr));
+    curr = curr.date(curr.date() + 1);
   }
   return dates;
 }
 
-export function createRunWeek(runs: Run[]): RunWeek {
-  const week: RunWeek = {
-    Monday: [],
-    Tuesday: [],
-    Wednesday: [],
-    Thursday: [],
-    Friday: [],
-    Saturday: [],
-    Sunday: []
-  };
+// they all fall within the same week
+export function createWeek(runs: Run[], weekStartDateStr: string) {
+  const start = dayjs(weekStartDateStr);
+  const weekDates = getDateRange(start, start.date(start.date() + 7));
+  const m = weekDates.map(d => d.format("YYYY-MM-DD"));
+  // todo use reduce
+  let datemap: Record<string, Run[]> = {};
+  m.forEach(d => datemap[d] = []);
+
   runs.forEach(r => {
-    const day = dateStrToDate(r.date).day();
-    week[dayEnum[day]].push(r);
+    datemap[r.date].push(r)
   });
-  return week;
-};
+  return datemap;
+}
+

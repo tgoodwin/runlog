@@ -1,5 +1,5 @@
 import { Run } from "./index";
-import { getWeekStart, groupByWeek, createRunWeek, getDateRange } from "./util";
+import { getWeekStart, groupByWeek, createWeek } from "./util";
 
 describe("getWeekStart", () => {
   it("returns the start of the week for a given date", () => {
@@ -23,6 +23,29 @@ describe("getWeekStart", () => {
   });
 });
 
+describe("test createWeek", () => {
+  it("should return a full week", () => {
+    const testRuns = [
+      { name: "", date: "2023-01-02", planned_miles: 0, actual_miles: 0 },
+    ];
+    const expected: Record<string, Run[]> = {
+      "2023-01-02": [
+        { name: "", date: "2023-01-02", planned_miles: 0, actual_miles: 0 },
+      ],
+      "2023-01-03": [],
+      "2023-01-04": [],
+      "2023-01-05": [],
+      "2023-01-06": [],
+      "2023-01-07": [],
+      "2023-01-08": [],
+    };
+    const actual = createWeek(testRuns, "2023-01-02");
+    Object.keys(expected).forEach((key) =>
+      expect(expected[key]).toEqual(actual[key])
+    );
+  });
+});
+
 describe("testgroupbyweek", () => {
   it("should get mondays right", () => {
     const testRuns = [
@@ -34,7 +57,6 @@ describe("testgroupbyweek", () => {
       },
     ];
     const groups = groupByWeek(testRuns);
-    console.log(groups);
     expect(Object.keys(groups).length).toEqual(1);
     expect(groups["2023-07-17"].length).toEqual(1);
     expect(groups["2023-07-17"][0].name).toEqual("monday july 17 2023");
@@ -60,64 +82,5 @@ describe("testgroupbyweek", () => {
     expect(Object.keys(groups).length).toEqual(2);
     expect(groups["2023-07-10"].length).toEqual(2);
     expect(groups["2023-07-17"].length).toEqual(2);
-  });
-});
-
-describe("createRunWeek", () => {
-  it("creates a runweek from a list of runs", () => {
-    const testWeek: Run[] = [
-      {
-        id: 1,
-        name: "Test Run 1",
-        date: "2023-07-21",
-        planned_miles: 5,
-        actual_miles: 5,
-      },
-      {
-        id: 2,
-        name: "Test Run 2",
-        date: "2023-07-22",
-        planned_miles: 5,
-        actual_miles: 5,
-      },
-    ];
-    const runweeks = createRunWeek(testWeek);
-    const expected = {
-      Monday: [],
-      Tuesday: [],
-      Wednesday: [],
-      Thursday: [],
-      Friday: [
-        {
-          id: 1,
-          name: "Test Run 1",
-          date: "2023-07-21",
-          planned_miles: 5,
-          actual_miles: 5,
-        },
-      ],
-      Saturday: [
-        {
-          id: 2,
-          name: "Test Run 2",
-          date: "2023-07-22",
-          planned_miles: 5,
-          actual_miles: 5,
-        },
-      ],
-      Sunday: [],
-    };
-    expect(runweeks).toEqual(expected);
-  });
-});
-
-describe("getDateRange", () => {
-  it("should return a range of dates", () => {
-    const start = new Date("2023-07-17");
-    const end = new Date("2023-07-20");
-    const dates = getDateRange(start, end);
-    expect(dates.length).toEqual(4);
-    expect(dates[0]).toEqual(start);
-    expect(dates[3]).toEqual(end);
   });
 });

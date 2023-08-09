@@ -1,5 +1,4 @@
 import {
-  createResource,
   createSignal,
   For,
   Show,
@@ -7,8 +6,8 @@ import {
   type JSX,
 } from "solid-js";
 
-import { formatDateStr, createRunWeek, groupByWeek } from "./util";
-import { Run, RunWeek, Day } from "./index";
+import { formatDateStr, createWeek, groupByWeek } from "./util";
+import { Run, RunWeek } from "./index";
 import { createClient } from "@supabase/supabase-js";
 
 const ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -31,7 +30,6 @@ export async function addRun(r: Run) {
 }
 
 export async function updateRun(r: Run) {
-  console.log(r);
   const { error } = await supabase
     .from("runs")
     .update({
@@ -39,14 +37,13 @@ export async function updateRun(r: Run) {
       planned_miles: r.planned_miles,
       actual_miles: r.actual_miles,
       notes: r.notes,
-      date: r.date
+      date: r.date,
     })
     .eq("id", r.id);
   return error;
 }
 
 export async function deleteRun(runId: number) {
-  console.log(runId);
   const { error } = await supabase.from("runs").delete().eq("id", runId);
   return error;
 }
@@ -55,15 +52,16 @@ function sum(runs: Run[], get: (r: Run) => number) {
   return runs.reduce((acc, r) => acc + get(r), 0);
 }
 
-function sumWeek(week: RunWeek, get: (r: Run) => number) {
+function sumWeek(week: Record<string, Run[]>, get: (r: Run) => number) {
   return Object.values(week).reduce((acc, runs) => acc + sum(runs, get), 0);
 }
 
-const [ runs, setRuns ] = createSignal<Run[]>([]);
+const [runs, setRuns] = createSignal<Run[]>([]);
 const refetch = () => getRuns().then((data) => setRuns(data || []));
 
 interface Props {
   run?: Run;
+  date?: string;
   submit: (r: Run) => void;
   close: () => void;
 }
@@ -81,6 +79,10 @@ function ModalForm(props: Props) {
     setActualMiles(props.run.actual_miles?.toString());
     setRunDate(props.run.date);
     setRunNotes(props.run.notes || "");
+  }
+
+  if (props.date) {
+    setRunDate(props.date);
   }
 
   const submitRun = (e: Event) => {
@@ -115,16 +117,16 @@ function ModalForm(props: Props) {
             onInput={(e) => setRunDate(e.currentTarget.value)}
           />
           <input
-            type="number"
+            type="text"
             placeholder="planned miles"
             required
             value={plannedMiles()}
             onInput={(e) => setPlannedMiles(e.currentTarget.value)}
           />
           <input
-            type="number"
+            type="text"
             placeholder="actual miles"
-            value={actualMiles()}
+            value={actualMiles() || ""}
             onInput={(e) => setActualMiles(e.currentTarget.value)}
           />
           <textarea
@@ -144,7 +146,7 @@ function ModalForm(props: Props) {
         </form>
         <Show when={!!props.run?.id}>
           {/* @ts-ignore */}
-          <button type="button" onClick={() => deleteRun(props.run.id).then(refetch)}>
+          <button type="button" onClick={() => deleteRun(props.run.id).then(refetch)} >
             delete
           </button>
         </Show>
@@ -155,6 +157,7 @@ function ModalForm(props: Props) {
 
 type ModalProps = {
   run?: Run;
+  date?: string;
   submit: (r: Run) => void;
   children: (open: () => void) => JSX.Element;
 };
@@ -169,7 +172,7 @@ function RunModal(props: ModalProps) {
     <div>
       <Show when={showModal()}>
         <ModalForm
-          run={props.run}
+          {...props}
           submit={onSubmit}
           close={() => setShowModal(false)}
         />
@@ -208,18 +211,21 @@ function WeekView(data: RunWeek) {
     <div>
       <div class="week-container">
         <For each={days}>
-          {(day) => {
-            const runs: Run[] = data[day as Day];
+          {(dateStr) => {
+            const runs: Run[] = data[dateStr];
             return (
               <div class="week-item margin-right">
-                {day}
+                {formatDateStr(dateStr)}
                 {runs.length ? (
                   <div>
                     <For each={runs}>{(r) => <RunView run={r} />}</For>
                   </div>
                 ) : (
                   <div class="run">
-                    <RunModal submit={(r) => addRun(r).then(refetch)}>
+                    <RunModal
+                      date={dateStr}
+                      submit={(r) => addRun(r).then(refetch)}
+                    >
                       {(showModal) => (
                         <div class="open-modal" onClick={showModal}>
                           +
@@ -243,6 +249,14 @@ function WeekView(data: RunWeek) {
 
 function App() {
   refetch();
+  // const byWeek = () => groupByWeek(runs());
+  const runs = () => [
+    { date: "2023-01-01", planned_miles: 5, actual_miles: 5, name: "" },
+    { date: "2023-01-02", planned_miles: 5, actual_miles: 5, name: "" },
+    { date: "2023-01-03", planned_miles: 5, actual_miles: 5, name: "" },
+    { date: "2023-01-05", planned_miles: 5, actual_miles: 5, name: "" },
+  ];
+
   const byWeek = () => groupByWeek(runs());
 
   return (
@@ -264,7 +278,7 @@ function App() {
               return (
                 <div class="run-week">
                   <h3>Week of {formatDateStr(week)}</h3>
-                  {WeekView(createRunWeek(weekRuns))}
+                  {WeekView(createWeek(weekRuns, week))}
                 </div>
               );
             }}
