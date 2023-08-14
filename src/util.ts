@@ -47,9 +47,9 @@ export function getDateRange(start: Dayjs, endInclusive: Dayjs): Dayjs[] {
 }
 
 // they all fall within the same week
-export function createWeek(runs: Run[], weekStartDateStr: string) {
+export function createWeek(runs: Run[], weekStartDateStr: string): RunWeek {
   const start = dayjs(weekStartDateStr);
-  const weekDates = getDateRange(start, start.date(start.date() + 7));
+  const weekDates = getDateRange(start, start.date(start.date() + 6));
   const m = weekDates.map(d => d.format("YYYY-MM-DD"));
   // todo use reduce
   let datemap: Record<string, Run[]> = {};

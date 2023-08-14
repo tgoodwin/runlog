@@ -249,14 +249,6 @@ function WeekView(data: RunWeek) {
 
 function App() {
   refetch();
-  // const byWeek = () => groupByWeek(runs());
-  const runs = () => [
-    { date: "2023-01-01", planned_miles: 5, actual_miles: 5, name: "" },
-    { date: "2023-01-02", planned_miles: 5, actual_miles: 5, name: "" },
-    { date: "2023-01-03", planned_miles: 5, actual_miles: 5, name: "" },
-    { date: "2023-01-05", planned_miles: 5, actual_miles: 5, name: "" },
-  ];
-
   const byWeek = () => groupByWeek(runs());
 
   return (
